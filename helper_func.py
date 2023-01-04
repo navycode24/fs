@@ -97,8 +97,8 @@ async def is_subscribed(filter, client, update):
             chat_id=FORCE_SUB_GROUP2, user_id=user_id
         )
     except UserNotParticipant:
-        return False
-        try:
+        return False,
+    try:
         member = await client.get_chat_member(
             chat_id=FORCE_SUB_GROUP3, user_id=user_id
         )
