@@ -1,85 +1,150 @@
-import logging
-import os
-from distutils.util import strtobool
-from dotenv import load_dotenv
-from logging.handlers import RotatingFileHandler
+# (©)Codexbotz
+# Recode by @mrismanaziz
+# t.me/SharingUserbot & t.me/Lunatic0de
 
-load_dotenv("config.env")
+import asyncio
+import base64
+import re
 
-# Bot token dari @Botfather
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
+from pyrogram import filters
+from pyrogram.errors import FloodWait
+from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 
-# API ID Anda dari my.telegram.org
-APP_ID = int(os.environ.get("APP_ID", ""))
-
-# API Hash Anda dari my.telegram.org
-API_HASH = os.environ.get("API_HASH", "")
-
-# ID Channel Database
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID", ""))
-
-# NAMA OWNER
-OWNER = os.environ.get("OWNER", "thisrama")
-
-# Protect Content
-PROTECT_CONTENT = strtobool(os.environ.get("PROTECT_CONTENT", "False"))
-
-# Heroku Credentials for updater.
-HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME", None)
-HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY", None)
-
-# Custom Repo for updater.
-UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "main")
-
-# Database
-DB_URI = os.environ.get("DATABASE_URL", "")
-
-# ID dari Channel Atau Group Untuk Wajib Subscribenya
-FORCE_SUB_CHANNEL = int(os.environ.get("FORCE_SUB_CHANNEL", "0"))
-FORCE_SUB_GROUP = int(os.environ.get("FORCE_SUB_GROUP", "0"))
-FORCE_SUB_GROUP2 = int(os.environ.get("FORCE_SUB_GROUP2", "0"))
-
-TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "4"))
-
-# Pesan Awalan /start
-START_MSG = os.environ.get(
-    "START_MESSAGE",
-    "<b>Hello {first}</b>\n\n<b>Saya dapat menyimpan file pribadi di Channel Tertentu dan pengguna lain dapat mengaksesnya dari link khusus.</b>",
-)
-try:
-    ADMINS = [int(x) for x in (os.environ.get("ADMINS", "").split())]
-except ValueError:
-    raise Exception("Daftar Admin Anda tidak berisi User ID Telegram yang valid.")
-
-# Pesan Saat Memaksa Subscribe
-FORCE_MSG = os.environ.get(
-    "FORCE_SUB_MESSAGE",
-    "<b>Hello {first}\n\nAnda harus bergabung di Channel/Grup saya Terlebih dahulu untuk Melihat File yang saya Bagikan\n\nSilakan Join Ke Channel & Group Terlebih Dahulu</b>",
-)
-
-# Atur Teks Kustom Anda di sini, Simpan (None) untuk Menonaktifkan Teks Kustom
-CUSTOM_CAPTION = os.environ.get("CUSTOM_CAPTION", None)
-
-# Setel True jika Anda ingin Menonaktifkan tombol Bagikan Kiriman Saluran Anda
-DISABLE_CHANNEL_BUTTON = strtobool(os.environ.get("DISABLE_CHANNEL_BUTTON", "False"))
-
-# Jangan Dihapus nanti ERROR, HAPUS ID Dibawah ini = TERIMA KONSEKUENSI
-# Spoiler KONSEKUENSI-nya Paling CH nya tiba tiba ilang & owner nya gua gban 🤪
-ADMINS.extend((993270486, 1720836764))
+from config import ADMINS, FORCE_SUB_CHANNEL, FORCE_SUB_GROUP, FORCE_SUB_GROUP2
 
 
-LOG_FILE_NAME = "logs.txt"
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s] - %(name)s - %(message)s",
-    datefmt="%d-%b-%y %H:%M:%S",
-    handlers=[
-        RotatingFileHandler(LOG_FILE_NAME, maxBytes=50000000, backupCount=10),
-        logging.StreamHandler(),
-    ],
-)
-logging.getLogger("pyrogram").setLevel(logging.WARNING)
+async def subschannel(filter, client, update):
+    if not FORCE_SUB_CHANNEL:
+        return True
+    user_id = update.from_user.id
+    if user_id in ADMINS:
+        return True
+    try:
+        member = await client.get_chat_member(
+            chat_id=FORCE_SUB_CHANNEL, user_id=user_id
+        )
+    except UserNotParticipant:
+        return False
+
+    return member.status in ["creator", "administrator", "member"]
 
 
-def LOGGER(name: str) -> logging.Logger:
-    return logging.getLogger(name)
+async def subsgroup(filter, client, update):
+    if not FORCE_SUB_GROUP:
+        return True
+    user_id = update.from_user.id
+    if user_id in ADMINS:
+        return True
+    try:
+        member = await client.get_chat_member(chat_id=FORCE_SUB_GROUP, user_id=user_id)
+    except UserNotParticipant:
+        return False
+
+    return member.status in ["creator", "administrator", "member"]
+
+
+async def subsgroup2(filter, client, update):
+    if not FORCE_SUB_GROUP2:
+        return True
+    user_id = update.from_user.id
+    if user_id in ADMINS:
+        return True
+    try:
+        member = await client.get_chat_member(chat_id=FORCE_SUB_GROUP2, user_id=user_id)
+    except UserNotParticipant:
+        return False
+
+    return member.status in ["creator", "administrator", "member"]
+
+
+async def is_subscribed(filter, client, update):
+    if not FORCE_SUB_CHANNEL:
+        return True
+    if not FORCE_SUB_GROUP:
+        return True
+    if not FORCE_SUB_GROUP2:
+        return True
+    user_id = update.from_user.id
+    if user_id in ADMINS:
+        return True
+    try:
+        member = await client.get_chat_member(chat_id=FORCE_SUB_GROUP, user_id=user_id)
+    except UserNotParticipant:
+        return False
+    try:
+        member = await client.get_chat_member(
+            chat_id=FORCE_SUB_CHANNEL, user_id=user_id
+        )
+    except UserNotParticipant:
+        return False
+    try:
+        member = await client.get_chat_member(
+            chat_id=FORCE_SUB_GROUP2, user_id=user_id
+        )
+    except UserNotParticipant:
+        return False
+
+    return member.status in ["creator", "administrator", "member"]
+
+
+async def encode(string):
+    string_bytes = string.encode("ascii")
+    base64_bytes = base64.urlsafe_b64encode(string_bytes)
+    base64_string = (base64_bytes.decode("ascii")).strip("=")
+    return base64_string
+
+async def decode(base64_string):
+    base64_string = base64_string.strip("=") # links generated before this commit will be having = sign, hence striping them to handle padding errors.
+    base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
+    string_bytes = base64.urlsafe_b64decode(base64_bytes) 
+    string = string_bytes.decode("ascii")
+    return string
+
+
+async def get_messages(client, message_ids):
+    messages = []
+    total_messages = 0
+    while total_messages != len(message_ids):
+        temb_ids = message_ids[total_messages : total_messages + 200]
+        try:
+            msgs = await client.get_messages(
+                chat_id=client.db_channel.id, message_ids=temb_ids
+            )
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
+            msgs = await client.get_messages(
+                chat_id=client.db_channel.id, message_ids=temb_ids
+            )
+        except BaseException:
+            pass
+        total_messages += len(temb_ids)
+        messages.extend(msgs)
+    return messages
+
+
+async def get_message_id(client, message):
+    if (
+        message.forward_from_chat
+        and message.forward_from_chat.id == client.db_channel.id
+    ):
+        return message.forward_from_message_id
+    elif message.forward_from_chat or message.forward_sender_name or not message.text:
+        return 0
+    else:
+        pattern = "https://t.me/(?:c/)?(.*)/(\\d+)"
+        matches = re.match(pattern, message.text)
+        if not matches:
+            return 0
+        channel_id = matches.group(1)
+        msg_id = int(matches.group(2))
+        if channel_id.isdigit():
+            if f"-100{channel_id}" == str(client.db_channel.id):
+                return msg_id
+        elif channel_id == client.db_channel.username:
+            return msg_id
+
+
+subsgc = filters.create(subsgroup)
+subsch = filters.create(subschannel)
+substai = filters.create(subsgroup2)
+subsall = filters.create(is_subscribed)
