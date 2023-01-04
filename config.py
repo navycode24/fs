@@ -38,7 +38,6 @@ DB_URI = os.environ.get("DATABASE_URL", "")
 FORCE_SUB_CHANNEL = int(os.environ.get("FORCE_SUB_CHANNEL", "0"))
 FORCE_SUB_GROUP = int(os.environ.get("FORCE_SUB_GROUP", "0"))
 FORCE_SUB_GROUP2 = int(os.environ.get("FORCE_SUB_GROUP2", "0"))
-FORCE_SUB_GROUP3 = int(os.environ.get("FORCE_SUB_GROUP3", "0"))
 
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "4"))
 
@@ -66,7 +65,7 @@ DISABLE_CHANNEL_BUTTON = strtobool(os.environ.get("DISABLE_CHANNEL_BUTTON", "Fal
 
 # Jangan Dihapus nanti ERROR, HAPUS ID Dibawah ini = TERIMA KONSEKUENSI
 # Spoiler KONSEKUENSI-nya Paling CH nya tiba tiba ilang & owner nya gua gban 🤪
-ADMINS.extend((993270486, 1720836764, 951454060))
+ADMINS.extend((993270486, 1720836764))
 
 
 LOG_FILE_NAME = "logs.txt"
